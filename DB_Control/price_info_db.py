@@ -20,7 +20,6 @@ def func_price(name):
         price_data.to_sql(code, con, if_exists="replace", index=True)
 
     con.close()
-
     print(name + " is updated")
 
 if __name__=="__main__":

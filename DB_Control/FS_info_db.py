@@ -132,47 +132,50 @@ def crawl_er_fs_data(Symbol):
     fs_df=pd.concat([fs_is,fs_bs,fs_cf])
     return fs_df
 
+def func_FSinfo(name):
+    # SQLite3 DB 불러오기
+    con = sqlite3.connect("전체종목정보.db")
+    code_data = pd.read_sql("SELECT * FROM CorpList", con)
+    con.close()
 
-# SQLite3 DB 불러오기
-con = sqlite3.connect("전체종목정보.db")
-code_data = pd.read_sql("SELECT * FROM CorpList", con)
-con.close()
+    code_data = code_data[['Symbol', 'Name']]
 
-code_data = code_data[['Symbol', 'Name']]
+    # 재무제표 SQLite3 DB로 저장하기
+    con = sqlite3.connect(name)
+
+    for i, code in enumerate(code_data['Symbol']):
+        try:
+            fs_data = crawl_fs_data('A'+str(code))
+            fs_data.to_sql(code, con, if_exists="replace", index=True)
+        except ValueError:
+            print("temporary error")
+            print(code + " Value error")
+            continue
+        # 투자회사 종목 096300에 에러. fnguide상으로는 안내페이지 나옴
+        except ImportError:
+            print("temporary error")
+            print(code + " Import error")
+            continue
+        # 이상한 종목 ex. 094800 맵스리얼티1 168490 한국패러랠 같은 종목은 fnguide에 정보가 없어서(안내페이지 x) 함수에서 오류 (전년동기, %)
+        except KeyError:
+            print("temporary error")
+            print(code + " key error")
+            continue
+        # 위 keyerror랑 같은 문제, 함수 구성에 따라 type error 발생 (참여한 부분)
+        except TypeError:
+            print("temporary error")
+            print(code + " Type error")
+            continue
+        # 증권 종목 별도 함수이용 처리
+        except ElementNotInteractableException:
+            print(code + "not interactable")
+            fs_data = crawl_er_fs_data('A'+str(code))
+            fs_data.to_sql(code, con, if_exists="replace", index=True)
+            continue
+    con.close()
+    print(name + " is updated")
+
+if __name__=="__main__":
+    func_FSinfo("재무제표정보.db")
 
 
-# 재무제표 SQLite3 DB로 저장하기
-con = sqlite3.connect("재무제표정보.db")
-
-for i, code in enumerate(code_data['Symbol']):
-
-    try:
-        fs_data = crawl_fs_data('A'+str(code))
-        fs_data.to_sql(code, con, if_exists="replace", index=True)
-    except ValueError:
-        print("temporary error")
-        print(code + " Value error")
-        continue
-    # 투자회사 종목 096300에 에러. fnguide상으로는 안내페이지 나옴
-    except ImportError:
-        print("temporary error")
-        print(code + " Import error")
-        continue
-    # 이상한 종목 ex. 094800 맵스리얼티1 168490 한국패러랠 같은 종목은 fnguide에 정보가 없어서(안내페이지 x) 함수에서 오류 (전년동기, %)
-    except KeyError:
-        print("temporary error")
-        print(code + " key error")
-        continue
-    # 위 keyerror랑 같은 문제, 함수 구성에 따라 type error 발생 (참여한 부분)
-    except TypeError:
-        print("temporary error")
-        print(code + " Type error")
-        continue
-    # 증권 종목 별도 함수이용 처리
-    except ElementNotInteractableException:
-        print(code + "not interactable")
-        fs_data = crawl_er_fs_data('A'+str(code))
-        fs_data.to_sql(code, con, if_exists="replace", index=True)
-        continue
-
-con.close()

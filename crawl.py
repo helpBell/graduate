@@ -81,12 +81,9 @@ def calculate_estimated_divi_to_treasury(code):#최신 국채시가배당률 계
         else:
             estimated_dividend_yield = float(yield_history[today_year])
 
-
     else: #배당수익률 최신 지표가 있는 경우, 그걸 가져옴
         estimated_dividend_yield = float(get_dividend_yield(code))
-
     current_3years_treasury = float(get_current_3years_treasury())
-
     estimated_dividend_to_treasury = estimated_dividend_yield/current_3years_treasury
 
     return estimated_dividend_to_treasury

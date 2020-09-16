@@ -14,9 +14,9 @@ def func_price(name):
     # SQLite3 DB로 저장하기
     con = sqlite3.connect(name)
 
-    # 20년간 가격데이터 종목별 테이블로 저장
+    # 20년간 가격데이터 종목별 테이블로 저장 (2000년 부터)
     for i, code in enumerate(code_data['Symbol']):
-        price_data = fdr.DataReader(code, '2000-01-01', '2019-12-31')
+        price_data = fdr.DataReader(code, '2000-01-01')
         price_data.to_sql(code, con, if_exists="replace", index=True)
 
     con.close()

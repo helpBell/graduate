@@ -20,6 +20,7 @@
 *.db
 *.sql
 FS_info_db.py
+FR_info_db.py
 
 .Trashes
 .Thumbs.db

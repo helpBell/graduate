@@ -1,16 +1,17 @@
 from bs4 import BeautifulSoup
-import requests
+import requests, sqlite3
+import pandas as pd
 from datetime import datetime
-def get_dividend_yield(code): #현재 DPS를 통한 예상 배당수익률
-    url = "http://companyinfo.stock.naver.com/company/c1010001.aspx?cmp_cd="+code
-    html = requests.get(url).text
 
-    soup = BeautifulSoup(html, 'html5lib')
-    dt_data = soup.select("td dl dt")
-    dividend_yield = dt_data[-2].text
-    dividend_yield = dividend_yield.split(' ')[1]
-    dividend_yield = dividend_yield[:-1]
-    return dividend_yield
+def get_dividend_yield(code): # 최근년도 말일 기준 EPS를 이용, 배당수익률
+    con = sqlite3.connect("종목별_가격정보.db")
+    last_price = pd.read_sql(f"SELECT Close FROM '{code}' order by date DESC LIMIT 1", con)
+    con.close()
+
+    con = sqlite3.connect("재무비율정보.db")
+    EPS = pd.read_sql(f'SELECT "2020/06" FROM "{code}" WHERE "index" = "EPS"', con)
+    con.close()
+    return (round(float(last_price.iloc[0,0])/float(EPS.iloc[0,0]),2))
 
 def get_ebit_over_ev(code):  # to get EV/EBIT
     url = "http://companyinfo.stock.naver.com/company/c1010001.aspx?cmp_cd=" + code
@@ -90,4 +91,4 @@ def calculate_estimated_divi_to_treasury(code):#최신 국채시가배당률 계
 
 
 if __name__ == "__main__":
-    print(get_previous_diviend_yield("000040"))
+    print(get_dividend_yield("000020"))

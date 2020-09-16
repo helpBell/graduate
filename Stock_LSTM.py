@@ -11,7 +11,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 def LSTM_Stock(code):
     # 1000일치 데이터 학습
-    Num = 5000 
+    Num = 1000
     
     con = sqlite3.connect("종목별_가격정보.db")
     data = pd.read_sql(f"SELECT * FROM '{code}' order by date LIMIT {Num}", con)
@@ -51,7 +51,7 @@ def LSTM_Stock(code):
 
     model = Sequential()
 
-    model.add(LSTM(30, return_sequences=True, input_shape=(50, 1)))
+    model.add(LSTM(30, return_sequences=True, input_shape=(30, 1)))
 
     model.add(LSTM(64, return_sequences=False))
 
@@ -70,11 +70,12 @@ def LSTM_Stock(code):
 
     fig = plt.figure(facecolor='white', figsize=(20, 10))
     ax = fig.add_subplot(111)
-    ax.plot(y_test, label='True')
-    ax.plot(pred, label='Prediction')
+    ax.plot(y_test, label='Real Data')
+    ax.plot(pred, label='Prediction Data')
     ax.legend()
+    ax.set_title(code)
     plt.show()
 
 
 if __name__ == "__main__":
-    print(LSTM_Stock("000020"))
+    print(LSTM_Stock("005930"))

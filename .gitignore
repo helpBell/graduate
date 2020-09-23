@@ -17,10 +17,10 @@
 *.tar
 *.zip
 *.gz
-*.db
 *.sql
-FS_info_db.py
-FR_info_db.py
+*.db
+# FS_info_db.py
+# FR_info_db.py
 
 .Trashes
 .Thumbs.db

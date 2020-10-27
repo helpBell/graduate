@@ -11,7 +11,7 @@ import datetime
 
 options = webdriver.ChromeOptions()
 options.add_argument('headless') # headless: 브라우저가 안뜸
-driver = webdriver.Chrome('C:\\Users\\hawoo\\Desktop\\FR_study\\FR-30th\\chromedriver.exe', options=options)
+driver = webdriver.Chrome('C:\\Users\\hawoo\\Desktop\\SKKU CS\\Graduate\\chromedriver.exe', options=options)
 
 # 재무비율 데이터프레임 형태로 만들어 주기
 def make_fr_dataframe(firm_code):

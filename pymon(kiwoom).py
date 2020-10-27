@@ -1,12 +1,20 @@
 import sys
+from PyQt5.QtWidgets import *
+import Kiwoom
 import time
 from pandas import DataFrame
 import datetime
 import crawl
 import numpy as np
 
+
+MARKET_KOSPI = 0
+MARKET_KOSDAQ = 10
+
 class pymon:
     def __init__(self):
+        self.kiwoom = Kiwoom.Kiwoom()
+        self.kiwoom.comm_connect()
         self.get_code_list()
 
     def is_it_float(self,num): #들어온 문자가 소수인지 파악하는 함수, 문자가 만약 빈칸이나 '-'인 경우, false를 반환
@@ -17,7 +25,20 @@ class pymon:
             return False
 
     def get_code_list(self):
-        self.codes = np.array(crawl.get_code()).flatten()
+        self.kospi_codes = self.kiwoom.get_code_list_by_market(MARKET_KOSPI)
+        self.kosdaq_codes = self.kiwoom.get_code_list_by_market(MARKET_KOSDAQ)
+
+    def get_ohlcv(self, code, start):
+        self.kiwoom.ohlcv = {'date':[], 'open':[], 'high':[], 'low':[], 'close':[], 'volume':[]}
+
+        self.kiwoom.set_input_value("종목코드", code)
+        self.kiwoom.set_input_value("기준일자", start)
+        self.kiwoom.set_input_value("수정주가구분", 1)
+        self.kiwoom.comm_rq_data("opt10081_req","opt10081", 0, "0101")
+        time.sleep(0.2)
+
+        dog = DataFrame(self.kiwoom.ohlcv, columns=['open','high', 'low', 'close', 'volume'], index=self.kiwoom.ohlcv['date'])
+        return dog
 
     def update_buy_list(self, buy_list):
         f = open("buy_list.txt", "wt", encoding='UTF8')
@@ -28,8 +49,6 @@ class pymon:
 
     def get_min_max_diviend_to_treasury(self, code):#3년 동안의 국채시가배당률 구하고, 최소랑 최대 반환
         previous_dividend_yield = crawl.get_previous_diviend_yield(code)
-        if previous_dividend_yield is None:
-            return (0, 0)
         three_years_treasury = crawl.get_3years_treasury()
         today = datetime.datetime.now()
         curr_year = today.year
@@ -62,25 +81,22 @@ class pymon:
     def run_dividend(self):
         buy_list = []
 
-        for code in self.codes:
+        for code in self.kospi_codes:
             ret = self.buy_check_by_dividend_algorithm(code)
-            print(ret)
             if ret[0] == 1:
                 print(code, ret)
                 buy_list.append((code,ret[1]))
             else:
-                # print(code, "Fail")
-                pass
+                print(code, "Fail")
             sorted_list = sorted(buy_list, key=lambda t: t[1], reverse=True)
-            # print(sorted_list)
+            print(sorted_list)
 
-        buy_list = []
         for i in range(0, 5):
             code = sorted_list[i][0]
-            buy_list.append(code)
+            buy_list1.append(code)
 
         # self.update_buy_list(buy_list1)
-        return buy_list
+        return buy_list1
 
     # 그린블라트 마법 공식 부분
     def run_Greenblatt(self):
@@ -89,11 +105,10 @@ class pymon:
         buy_list = []
 
         # EV/EVITDA 부분
-        for code in self.codes:
+        for code in self.kospi_codes:
             ret = crawl.get_ebit_over_ev(code)
             if ret is None :
-                # print(code, "Fail")
-                pass
+                print(code, "Fail")
             else:
                 print(code, ret)
                 buy_list1.append((code, ret))
@@ -104,11 +119,10 @@ class pymon:
             buy_list1.append([code, i])
 
         # ROIC 부분
-        for code in self.codes:
+        for code in self.kospi_codes:
             ret = crawl.get_roic(code)
             if ret is None :
-                # print(code, "Fail")
-                pass
+                print(code, "Fail")
             else:
                 print(code, ret)
                 buy_list2.append((code, ret))
@@ -138,33 +152,25 @@ class pymon:
     def run_grahem(self):
         buy_list=[]
 
-        for code in self.codes:
+        for code in self.kospi_codes:
             per_data = crawl.get_per(code)
             debt_ratio_data = crawl.get_debt_ratio(code)
             if per_data is None or debt_ratio_data is None :
-                # print(code, "Fail")
-                pass
+                print(code, "Fail")
             elif 0<=per_data<=5 and debt_ratio_data<=50:
                 print(code, per_data, debt_ratio_data)
-                buy_list.append([code, per_data, debt_ratio_data])
-            else:
-                # print("Inappropriate")
-                pass
-        if len(buy_list)>=6:
-            sorted_list = sorted(buy_list, key=lambda t: t[1]*t[2])
-            buy_list = []
-            for i in range(0, 6):
-                code = sorted_list[i][0]
                 buy_list.append(code)
-        
+            else:
+                print("Inappropriate")
         # self.update_buy_list(buy_list)
         return buy_list
 
-
 if __name__ == "__main__":
+    app = QApplication(sys.argv)
     pymon = pymon()
-    pymon.run_dividend()
+    # pymon.run_dividend()
     # pymon.run_Greenblatt()
     # pymon.run_grahem()
+    print(pymon.kospi_codes)
 
 
